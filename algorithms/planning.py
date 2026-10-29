@@ -25,7 +25,18 @@ def action_value(mdp, state, action, values):
       values[terminal] es cero.
     """
     # TODO: Add your code here
-    raise NotImplementedError("Complete este bloque TODO")
+    total = 0.0
+
+    for successor, probability in mdp.transitions(state, action):
+        reward = mdp.reward(state, action, successor)
+        total += probability * (reward + mdp.discount * values[successor])
+
+    return total
+
+""""
+Se verificó que la función funcionará correctamente y utlizara bien transitions, reward y discount. 
+"""
+
     # FIN DEL BLOQUE DEL ESTUDIANTE
 
 
@@ -54,7 +65,29 @@ def value_iteration(mdp, tolerance=1e-8, max_iterations=1000):
     history, deltas = [values.copy()], []
     for _ in range(max_iterations):
         # TODO: Add your code here
-        raise NotImplementedError("Complete este bloque TODO")
+    
+        previous_values = values
+        new_values = previous_values.copy()
+        delta = 0.0
+
+        for state in mdp.states:
+            actions = mdp.actions(state)
+            if not actions:
+                new_values[state] = 0.0
+            else:
+                new_values[state] = max(
+                    action_value(mdp, state, action, previous_values)
+                    for action in actions
+                )
+
+            delta = max(
+                delta,
+                abs(new_values[state] - previous_values[state])
+            )
+
+        values = new_values
+        converged = delta < tolerance
+
         # FIN DEL BLOQUE DEL ESTUDIANTE
         # Copias para la animación y empaquetado del resultado.
         history.append(values.copy())
@@ -62,7 +95,22 @@ def value_iteration(mdp, tolerance=1e-8, max_iterations=1000):
         if converged:
             return PlanningResult(values, history, deltas, True)
     return PlanningResult(values, history, deltas, False)
-
+"""    
+    Codigo inicial: 
+        new_values = values.copy()
+        delta = 0.0
+        for state in mdp.states:
+            actions = mdp.actions(state)
+            if not actions: 
+                new_values[state] = 0.0
+            else:
+                action_values = [action_value(mdp, state, action, values) for action in actions]
+                new_values[state] = max(action_values)
+        values = new_values 
+        
+    -Se agregó el cálculo de delta (no se tenia claro como se calculaba), que registra el mayor cambio absoluto entre los valores nuevos y los anteriores.
+    -Se agregó la variable converged, definida mediante la condición delta < tolerance, para determinar si el algoritmo alcanzó el criterio de convergencia."""
+        
 
 def extract_policy(mdp, values):
     """Punto 5: retorna acción por estado; terminales -> None.
@@ -75,5 +123,46 @@ def extract_policy(mdp, values):
     - Respete mdp.actions: desempate N, E, S, W conservando el primero.
     """
     # TODO: Add your code here
-    raise NotImplementedError("Complete este bloque TODO")
+    
+    
+    policy = {}
+
+    for state in mdp.states:
+        actions = mdp.actions(state)
+        if not actions:
+            policy[state] = None
+        else:
+            best_action = actions[0]
+            best_value = action_value(
+                mdp, state, best_action, values
+            )
+
+            for action in actions[1:]:
+                value = action_value(mdp, state, action, values)
+                if value > best_value:
+                    best_action = action
+                    best_value = value
+
+            policy[state] = best_action
+
+    return policy
+
+    """
+    Codigo inicial:
+    policy = {}
+    
+    for state in mdp.states:
+        actions = mdp.actions(state)
+        if not actions:
+            policy[state] = None
+        else:
+            best_action = max(actions,key=lambda action: action_value(mdp, state, action, values))
+            policy[state] = best_action
+    
+    return policy
+
+-Se reemplazó la selección mediante max(..., key=...) por una comparación explícita de los valores de las acciones.
+-Se agregó una variable best_value para almacenar el valor de la mejor acción encontrada.
+-Se recorrieron las acciones restantes y solo se actualizó la mejor acción cuando value > best_value. """
+
     # FIN DEL BLOQUE DEL ESTUDIANTE
