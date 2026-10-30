@@ -21,9 +21,89 @@ def enumeration_ask(network, query: str, evidence: dict) -> dict:
     - Evidencia imposible: ValueError. Consulta observada: distribución puntual
       solo si la evidencia es posible.
     """
-    # Valida nombres de variables y dominio de la evidencia.
     network.validate_query(query, evidence)
 
-    # TODO: Add your code here
-    raise NotImplementedError("Complete este bloque TODO")
-    # FIN DEL BLOQUE DEL ESTUDIANTE
+    def enumerate_all(variables, event):
+        if not variables:
+            return 1.0
+        variable = variables[0]
+        rest = variables[1:]
+        if variable in event:
+            probability = network.probability(variable, event[variable], event)
+            return probability * enumerate_all(rest, event)
+        total = 0.0
+        for value in (0, 1):
+            new_event = event.copy()
+            new_event[variable] = value
+
+            probability = network.probability(variable, value, new_event)
+            total += probability * enumerate_all(rest, new_event)
+        return total
+
+    weights = {}
+    for value in (0, 1):
+        if query in evidence and evidence[query] != value:
+            weights[value] = 0.0
+        else:
+            new_evidence = evidence.copy()
+            new_evidence[query] = value
+            weights[value] = enumerate_all(network.variables, new_evidence)
+    if sum(weights.values()) == 0:
+        raise ValueError("Evidencia imposible")
+
+    return normalize(weights)
+  
+  
+
+"""
+  CODIGO INICIAL 
+  def enumeration_ask(network, query: str, evidence: dict) -> dict:
+
+    network.validate_query(query, evidence)
+
+    def enumerate_all(variables, event):
+        if len(variables) == 0:
+            return 1
+        variable = variables[0]
+        rest = variables[1:]
+        if variable in event:
+            probability = network.probability(
+                variable, event[variable], event
+            )
+            return probability * enumerate_all(rest, event)
+        total = 0
+        for value in (0, 1):
+            new_event = event.copy()
+            new_event[variable] = value
+            probability = network.probability(
+                variable, value, new_event
+            )
+            total = probability * enumerate_all(rest, new_event)
+        return total
+    weights = {}
+
+    for value in (0, 1):
+        new_evidence = evidence.copy()
+        new_evidence[query] = value
+        weights[value] = enumerate_all(
+            network.variables, new_evidence
+        )
+    return normalize(weights)
+    
+    
+- Se cambiaron variables, porque antes no estaba
+  sumando los resultados de las dos posibilidades,
+  sino que reemplazaba el valor anterior.
+
+- Se agregó una condición para comprobar si la
+  variable que estamos consultando ya tenía un valor
+  en la evidencia, porque antes se cambiaba ese valor
+  sin tenerlo en cuenta.
+
+- Se agregó la comprobación de que la suma de los
+  pesos no fuera cero, ya que faltaba manejar el
+  caso en el que la evidencia no es posible.
+  """
+
+
+
