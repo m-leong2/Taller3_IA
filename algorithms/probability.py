@@ -13,7 +13,15 @@ def normalize(weights: dict) -> dict:
     - Rechace pesos negativos, no finitos, diccionarios vacíos y suma cero.
     """
     # TODO: Add your code here
-    raise NotImplementedError("Complete este bloque TODO")
+    if not weights:
+        raise ValueError("El diccionario de pesos está vacío")
+    if any(not math.isfinite(w) or w < 0 for w in weights.values()):
+        raise ValueError("Pesos negativos o no finitos encontrados")
+    total = sum(weights.values())
+    if math.isclose(total, 0.0, abs_tol=1e-9) or total <= 0:
+        raise ValueError("La suma de los pesos es cero")
+    return {k: w / total for k, w in weights.items()}
+
     # FIN DEL BLOQUE DEL ESTUDIANTE
 
 
